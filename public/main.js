@@ -1,3 +1,9 @@
+import {
+	ProfileComponent,
+	RENDER_RULES,
+} from './components/Profile/Profile.js';
+const AjaxModule = globalThis.AjaxModule;
+
 console.log('topkek');
 
 const application = document.getElementById('application');
@@ -19,26 +25,6 @@ function createMenu() {
 
 		application.appendChild(menuItem);
 	});
-}
-
-function ajax(method, url, body = null, callback) {
-	const xhr = new XMLHttpRequest();
-	xhr.open(method, url, true);
-	xhr.withCredentials = true;
-
-	xhr.addEventListener('readystatechange', function() {
-		if (xhr.readyState !== 4) return;
-
-		callback(xhr.status, xhr.responseText);
-	});
-
-	if (body) {
-		xhr.setRequestHeader('Content-type', 'application/json; charset=utf8');
-		xhr.send(JSON.stringify(body));
-		return;
-	}
-
-	xhr.send();
 }
 
 function createSignUp() {
@@ -76,15 +62,19 @@ function createSignUp() {
 		const age = parseInt(form.elements['age'].value);
 		const password = form.elements['password'].value;
 
-		ajax('POST', '/signup', {email, age, password}, function (status, responseText) {
-			if (status === 201) {
-				createProfile();
-				return;
-			}
+		AjaxModule.doPost({
+			url: '/signup',
+			body: {email, age, password},
+			callback(status, responseText) {
+				if (status === 201) {
+					createProfile();
+					return;
+				}
 
-			const {error} = JSON.parse(responseText);
-			alert(error);
-		})
+				const {error} = JSON.parse(responseText);
+				alert(error);
+			}
+		});
 	});
 
 	const back = document.createElement('a');
@@ -128,20 +118,19 @@ function createLogin() {
 		const email = emailInput.value.trim();
 		const password = passwordInput.value.trim();
 
-		ajax(
-			'POST',
-			'/login',
-			{email, password},
-			function (status, response) {
-				if (status === 200) {
+		AjaxModule.doPost({
+			url: '/login',
+			body: {email, password},
+			callback(status, responseText) {
+				if (status === 201) {
 					createProfile();
-				} else {
-					const {error} = JSON.parse(response);
-					alert(error);
+					return;
 				}
-			}
-		)
 
+				const {error} = JSON.parse(responseText);
+				alert(error);
+			}
+		});
 	});
 
 	application.appendChild(form);
@@ -150,28 +139,33 @@ function createLogin() {
 
 function createProfile() {
 	application.innerHTML = '';
-	ajax('GET', '/me', null, function (status, responseText) {
-		let isMe = false;
-		if (status === 200) {
-			isMe = true;
-		}
+	AjaxModule.doGet({
+		url: '/me',
+		body: null,
+		callback(status, responseText) {
+			let isMe = false;
+			if (status === 200) {
+				isMe = true;
+			}
 
-		if (status === 401) {
-			isMe = false;
-		}
+			if (status === 401) {
+				isMe = false;
+			}
 
-		if (isMe) {
-			const responseBody = JSON.parse(responseText);
-
-			application.innerHTML = '';
-
-			const span = document.createElement('span');
-			span.textContent = `Мне ${responseBody.age} и я крутой на ${responseBody.score} очков`;
-
-			application.appendChild(span);
-		} else {
-			alert('АХТУНГ нет авторизации');
-			createLogin();
+			if (isMe) {
+				try {
+					const responseBody = JSON.parse(responseText);
+					application.innerHTML = '';
+					const profile = new ProfileComponent(application);
+					profile.data = responseBody;
+					profile.render(RENDER_RULES.STRING);
+				} catch (e) {
+					return;
+				}
+			} else {
+				alert('АХТУНГ нет авторизации');
+				createLogin();
+			}
 		}
 	});
 }
