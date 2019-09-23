@@ -119,7 +119,7 @@ function createLogin() {
 		const password = passwordInput.value.trim();
 
 		AjaxModule.doPost({
-			url: '/login',
+			url: 'http://localhost:3001/login',
 			body: {email, password},
 			callback(status, responseText) {
 				if (status === 201) {
@@ -139,35 +139,55 @@ function createLogin() {
 
 function createProfile() {
 	application.innerHTML = '';
-	AjaxModule.doGet({
-		url: '/me',
-		body: null,
-		callback(status, responseText) {
-			let isMe = false;
-			if (status === 200) {
-				isMe = true;
+
+	fetch('http://localhost:3001/me', {
+		method: 'GET',
+		credentials: 'include',
+	})
+		.then(response => {
+			if (response.status >= 300) {
+				throw new Error(`Неверный статус ${response.status}`);
 			}
 
-			if (status === 401) {
-				isMe = false;
-			}
+			return response.json();
+		})
+		.then(data => {
+			console.log('Вернул response.smth()');
+			console.dir({data});
 
-			if (isMe) {
-				try {
-					const responseBody = JSON.parse(responseText);
-					application.innerHTML = '';
-					const profile = new ProfileComponent(application);
-					profile.data = responseBody;
-					profile.render(RENDER_RULES.STRING);
-				} catch (e) {
-					return;
-				}
-			} else {
-				alert('АХТУНГ нет авторизации');
-				createLogin();
-			}
-		}
-	});
+			application.innerHTML = '';
+			const profile = new ProfileComponent(application);
+			profile.data = data;
+			profile.render(RENDER_RULES.STRING);
+		})
+		.catch(err => {
+			console.error(err);
+			alert(err.message);
+
+			createLogin();
+		});
+
+	// AjaxModule.doPromiseGet('/me', null)
+	// 	.then(function (obj) {
+	// 		const responseText = obj.responseText;
+	//
+	// 		const responseBody = JSON.parse(responseText);
+	// 		application.innerHTML = '';
+	// 		const profile = new ProfileComponent(application);
+	// 		profile.data = responseBody;
+	// 		profile.render(RENDER_RULES.STRING);
+	// 	})
+	// 	.catch(function (obj) {
+	// 		if (obj instanceof Error) {
+	// 			console.error(obj);
+	// 			alert('Случилась js ошибка!');
+	// 		} else {
+	// 			const {status} = obj;
+	// 			alert(`Запрос за /me вернул ${status}`);
+	// 		}
+	//
+	// 		createLogin();
+	// 	});
 }
 
 

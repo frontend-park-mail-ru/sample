@@ -67,6 +67,9 @@ app.post('/signup', function (req, res) {
 });
 
 app.post('/login', function (req, res) {
+	res.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+	res.set('Access-Control-Allow-Credentials', 'true');
+
 	const password = req.body.password;
 	const email = req.body.email;
 	if (!password || !email) {
@@ -83,7 +86,29 @@ app.post('/login', function (req, res) {
 	res.status(200).json({id});
 });
 
+app.options('/login', function (req, res) {
+	const Origin = req.get('Origin');
+	const AccessControlRequestMethod = req.get('Access-Control-Request-Method');
+	const AccessControlRequestHeaders = req.get('Access-Control-Request-Headers');
+	console.log({
+		Origin,
+		AccessControlRequestMethod,
+		AccessControlRequestHeaders,
+	});
+
+
+	res.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+	res.set('Access-Control-Allow-Methods', 'POST,PUT');
+	res.set('Access-Control-Allow-Headers', 'Content-Type,X-Lol');
+	res.set('Access-Control-Allow-Credentials', 'true');
+
+	res.status(204).end();
+});
+
 app.get('/me', function (req, res) {
+	res.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+	res.set('Access-Control-Allow-Credentials', 'true');
+
 	const id = req.cookies['podvorot'];
 	const email = ids[id];
 	if (!email || !users[email]) {
