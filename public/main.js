@@ -15,9 +15,19 @@ const menuItems = {
 	about: 'О себе любимом',
 };
 
+if ('serviceWorker' in navigator) {
+	navigator.serviceWorker.register('sw.js')
+		.then((registration) => {
+			console.log('ServiceWorker registration', registration);
+		})
+		.catch((err) => {
+			console.error(err);
+		});
+}
+
 function createMenu() {
 	application.innerHTML = '';
-	Object.keys(menuItems).forEach(function (key) {
+	Object.keys(menuItems).forEach(function(key) {
 		const menuItem = document.createElement('a');
 		menuItem.textContent = menuItems[key];
 		menuItem.href = `/${key}`;
@@ -64,14 +74,20 @@ function createSignUp() {
 
 		AjaxModule.doPost({
 			url: '/signup',
-			body: {email, age, password},
+			body: {
+				email,
+				age,
+				password
+			},
 			callback(status, responseText) {
 				if (status === 201) {
 					createProfile();
 					return;
 				}
 
-				const {error} = JSON.parse(responseText);
+				const {
+					error
+				} = JSON.parse(responseText);
 				alert(error);
 			}
 		});
@@ -120,14 +136,19 @@ function createLogin() {
 
 		AjaxModule.doPost({
 			url: 'http://localhost:3001/login',
-			body: {email, password},
+			body: {
+				email,
+				password
+			},
 			callback(status, responseText) {
 				if (status === 201) {
 					createProfile();
 					return;
 				}
 
-				const {error} = JSON.parse(responseText);
+				const {
+					error
+				} = JSON.parse(responseText);
 				alert(error);
 			}
 		});
@@ -141,9 +162,9 @@ function createProfile() {
 	application.innerHTML = '';
 
 	fetch('http://localhost:3001/me', {
-		method: 'GET',
-		credentials: 'include',
-	})
+			method: 'GET',
+			credentials: 'include',
+		})
 		.then(response => {
 			if (response.status >= 300) {
 				throw new Error(`Неверный статус ${response.status}`);
@@ -153,7 +174,9 @@ function createProfile() {
 		})
 		.then(data => {
 			console.log('Вернул response.smth()');
-			console.dir({data});
+			console.dir({
+				data
+			});
 
 			application.innerHTML = '';
 			const profile = new ProfileComponent(application);
@@ -199,8 +222,10 @@ const functions = {
 	about: null,
 };
 
-application.addEventListener('click', function (evt) {
-	const {target} = evt;
+application.addEventListener('click', function(evt) {
+	const {
+		target
+	} = evt;
 
 	if (target instanceof HTMLAnchorElement) {
 		evt.preventDefault();
@@ -209,4 +234,3 @@ application.addEventListener('click', function (evt) {
 });
 
 createMenu();
-
