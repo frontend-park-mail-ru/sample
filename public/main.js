@@ -15,9 +15,19 @@ const menuItems = {
 	about: 'О себе любимом',
 };
 
+if ('serviceWorker' in navigator) {
+	navigator.serviceWorker.register('sw.js')
+		.then((registration) => {
+			console.log('ServiceWorker registration', registration);
+		})
+		.catch((err) => {
+			console.error(err);
+		});
+}
+
 function createMenu() {
 	application.innerHTML = '';
-	Object.keys(menuItems).forEach(function (key) {
+	Object.keys(menuItems).forEach(function(key) {
 		const menuItem = document.createElement('a');
 		menuItem.textContent = menuItems[key];
 		menuItem.href = `/${key}`;
@@ -64,14 +74,20 @@ function createSignUp() {
 
 		AjaxModule.doPost({
 			url: '/signup',
-			body: {email, age, password},
+			body: {
+				email,
+				age,
+				password
+			},
 			callback(status, responseText) {
 				if (status === 201) {
 					createProfile();
 					return;
 				}
 
-				const {error} = JSON.parse(responseText);
+				const {
+					error
+				} = JSON.parse(responseText);
 				alert(error);
 			}
 		});
@@ -119,15 +135,20 @@ function createLogin() {
 		const password = passwordInput.value.trim();
 
 		AjaxModule.doPost({
-			url: '/login',
-			body: {email, password},
+			url: 'http://localhost:3001/login',
+			body: {
+				email,
+				password
+			},
 			callback(status, responseText) {
 				if (status === 201) {
 					createProfile();
 					return;
 				}
 
-				const {error} = JSON.parse(responseText);
+				const {
+					error
+				} = JSON.parse(responseText);
 				alert(error);
 			}
 		});
@@ -139,35 +160,57 @@ function createLogin() {
 
 function createProfile() {
 	application.innerHTML = '';
-	AjaxModule.doGet({
-		url: '/me',
-		body: null,
-		callback(status, responseText) {
-			let isMe = false;
-			if (status === 200) {
-				isMe = true;
+
+	fetch('http://localhost:3001/me', {
+			method: 'GET',
+			credentials: 'include',
+		})
+		.then(response => {
+			if (response.status >= 300) {
+				throw new Error(`Неверный статус ${response.status}`);
 			}
 
-			if (status === 401) {
-				isMe = false;
-			}
+			return response.json();
+		})
+		.then(data => {
+			console.log('Вернул response.smth()');
+			console.dir({
+				data
+			});
 
-			if (isMe) {
-				try {
-					const responseBody = JSON.parse(responseText);
-					application.innerHTML = '';
-					const profile = new ProfileComponent(application);
-					profile.data = responseBody;
-					profile.render(RENDER_RULES.STRING);
-				} catch (e) {
-					return;
-				}
-			} else {
-				alert('АХТУНГ нет авторизации');
-				createLogin();
-			}
-		}
-	});
+			application.innerHTML = '';
+			const profile = new ProfileComponent(application);
+			profile.data = data;
+			profile.render(RENDER_RULES.STRING);
+		})
+		.catch(err => {
+			console.error(err);
+			alert(err.message);
+
+			createLogin();
+		});
+
+	// AjaxModule.doPromiseGet('/me', null)
+	// 	.then(function (obj) {
+	// 		const responseText = obj.responseText;
+	//
+	// 		const responseBody = JSON.parse(responseText);
+	// 		application.innerHTML = '';
+	// 		const profile = new ProfileComponent(application);
+	// 		profile.data = responseBody;
+	// 		profile.render(RENDER_RULES.STRING);
+	// 	})
+	// 	.catch(function (obj) {
+	// 		if (obj instanceof Error) {
+	// 			console.error(obj);
+	// 			alert('Случилась js ошибка!');
+	// 		} else {
+	// 			const {status} = obj;
+	// 			alert(`Запрос за /me вернул ${status}`);
+	// 		}
+	//
+	// 		createLogin();
+	// 	});
 }
 
 
@@ -179,8 +222,10 @@ const functions = {
 	about: null,
 };
 
-application.addEventListener('click', function (evt) {
-	const {target} = evt;
+application.addEventListener('click', function(evt) {
+	const {
+		target
+	} = evt;
 
 	if (target instanceof HTMLAnchorElement) {
 		evt.preventDefault();
@@ -189,4 +234,3 @@ application.addEventListener('click', function (evt) {
 });
 
 createMenu();
-
